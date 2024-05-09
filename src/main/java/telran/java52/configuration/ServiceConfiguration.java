@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class ServiceConfiguration {
 
 	@Bean
-	public ModelMapper getModelMapper() {
+	ModelMapper getModelMapper() {
 		ModelMapper modelMapper = new ModelMapper();
 		modelMapper.getConfiguration()
 					.setFieldMatchingEnabled(true)
