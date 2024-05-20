@@ -9,6 +9,7 @@ import telran.java52.accounting.dto.RolesDto;
 import telran.java52.accounting.dto.UserDto;
 import telran.java52.accounting.dto.UserEditDto;
 import telran.java52.accounting.dto.UserRegisterDto;
+import telran.java52.accounting.dto.exeption.UserConflictException;
 import telran.java52.accounting.dto.exeption.UserNotFoundException;
 import telran.java52.accounting.model.UserAccount;
 
@@ -21,6 +22,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
 	@Override
 	public UserDto register(UserRegisterDto userRegisterDto) {
+		if(userRepository.existsByLogin(userRegisterDto.getLogin())) {
+			throw new UserConflictException();
+		}
 		UserAccount userAccount = modelMapper.map(userRegisterDto, UserAccount.class);
 		userAccount = userRepository.save(userAccount);
 		return modelMapper.map(userAccount, UserDto.class);
