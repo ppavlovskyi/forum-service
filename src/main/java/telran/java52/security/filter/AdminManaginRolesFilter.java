@@ -16,6 +16,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import telran.java52.accounting.dao.UserRepository;
+import telran.java52.accounting.model.Role;
+import telran.java52.accounting.model.UserAccount;
 
 @Component
 @RequiredArgsConstructor
@@ -32,7 +34,7 @@ public class AdminManaginRolesFilter implements Filter {
 		if (checkEndpointAdministrator(request.getMethod(), request.getServletPath())) {
 			try {
 				String login = request.getUserPrincipal().getName();
-				if (!(login.equals("admin"))) {
+				if (!isPresentRoleAdministrator(login)) {
 					throw new RuntimeException();
 				}
 			} catch (RuntimeException e) {
@@ -46,7 +48,7 @@ public class AdminManaginRolesFilter implements Filter {
 				String login = request.getUserPrincipal().getName();
 				String path = request.getServletPath();
 				String[] segment = path.split("/");
-				if(!(segment[3].equals(login)|| login.equals("admin"))){
+				if(!(segment[3].equals(login)|| isPresentRoleAdministrator(login))){
 					throw new RuntimeException();
 				}
 
@@ -57,6 +59,11 @@ public class AdminManaginRolesFilter implements Filter {
 		}
 
 		chain.doFilter(request, response);
+	}
+
+	private boolean isPresentRoleAdministrator(String login) {
+		UserAccount userAccount = userRepository.findById(login).orElseThrow(RuntimeException::new);
+		return userAccount.getRoles().contains(Role.ADMINISTRATOR);
 	}
 
 	private boolean checkEndpointOwnerOrAdministrator(String method, String path) {
