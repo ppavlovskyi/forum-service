@@ -57,12 +57,10 @@ public class UserAccountController {
 	public RolesDto deleteRole(@PathVariable String login, @PathVariable String role) {
 		return userService.changeRolesList(login, role, false);
 	}
-	// Do not test
-	@PostMapping("/password")
+	@PutMapping("/password")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void changePassword(Principal principal, @RequestHeader("X-Password") String newPassword) {
 		userService.changePassword(principal.getName(), newPassword);
-
 	}
 
 	@GetMapping("/user/{login}")
