@@ -47,14 +47,16 @@ public class AuthenticationFilter implements jakarta.servlet.Filter {
 			} catch (RuntimeException e) {
 				response.sendError(401);
 				return;
-			} 
+			}
 		}
-		//		request.getUserPrincipal();
+		// request.getUserPrincipal();
 		chain.doFilter(request, response);
 	}
 
 	private boolean checkEndpoint(String method, String path) {
-		return !(HttpMethod.POST.matches(method) && path.matches("/account/register"));
+		return !(HttpMethod.POST.matches(method) && path.matches("/account/register")
+				||  path.matches("/forum/posts/\\w+(/\\w+)?"));
+//				|| HttpMethod.POST.matches(method) && path.matches("/forum/posts/.*"));
 	}
 
 	private String[] getCredrntials(String header) {

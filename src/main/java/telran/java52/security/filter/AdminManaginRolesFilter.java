@@ -38,7 +38,7 @@ public class AdminManaginRolesFilter implements Filter {
 					throw new RuntimeException();
 				}
 			} catch (RuntimeException e) {
-				response.sendError(401);
+				response.sendError(403, "Not authorized");
 				return;
 			}
 
@@ -53,7 +53,7 @@ public class AdminManaginRolesFilter implements Filter {
 				}
 
 			} catch (RuntimeException e) {
-				response.sendError(401);
+				response.sendError(403, "You are not allowed to access this resource");
 				return;
 			}
 		}
