@@ -3,12 +3,15 @@ package telran.java52.security.filter;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Base64;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
+import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -18,12 +21,14 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import telran.java52.accounting.dao.UserRepository;
+import telran.java52.accounting.model.Role;
 import telran.java52.accounting.model.UserAccount;
+import telran.java52.security.model.User;
 
 @Component
 @RequiredArgsConstructor
 @Order(10)
-public class AuthenticationFilter implements jakarta.servlet.Filter {
+public class AuthenticationFilter implements Filter {
 
 	final UserRepository userRepository;
 
@@ -32,9 +37,6 @@ public class AuthenticationFilter implements jakarta.servlet.Filter {
 			throws IOException, ServletException {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
-//		System.out.println(request.getServletPath());
-//		System.out.println(request.getMethod());
-//		System.out.println(request.getHeader("Authorization"));
 		if (checkEndpoint(request.getMethod(), request.getServletPath())) {
 			try {
 				String[] credentials = getCredrntials(request.getHeader("Authorization"));
@@ -43,20 +45,21 @@ public class AuthenticationFilter implements jakarta.servlet.Filter {
 				if (!BCrypt.checkpw(credentials[1], userAccount.getPassword())) {
 					throw new RuntimeException();
 				}
-				request = new WrappedRequest(request, userAccount.getLogin());
+				Set<String> roles = userAccount.getRoles().stream().map(Role::name).collect(Collectors.toSet());
+				request = new WrappedRequest(request, userAccount.getLogin(), roles);
 			} catch (RuntimeException e) {
-				response.sendError(401);
+				response.sendError(401,"Bad Authentication.");
 				return;
 			}
 		}
-		// request.getUserPrincipal();
 		chain.doFilter(request, response);
 	}
 
 	private boolean checkEndpoint(String method, String path) {
-		return !(HttpMethod.POST.matches(method) && path.matches("/account/register")
-				||  path.matches("/forum/posts/\\w+(/\\w+)?"));
-//				|| HttpMethod.POST.matches(method) && path.matches("/forum/posts/.*"));
+		return !(
+					HttpMethod.POST.matches(method) && path.matches("/account/register")
+					|| path.matches("/forum/posts/\\w+(/\\w+)?")
+				);		
 	}
 
 	private String[] getCredrntials(String header) {
@@ -67,15 +70,17 @@ public class AuthenticationFilter implements jakarta.servlet.Filter {
 
 	private class WrappedRequest extends HttpServletRequestWrapper {
 		private String login;
+		private Set<String> roles;
 
-		public WrappedRequest(HttpServletRequest request, String login) {
+		public WrappedRequest(HttpServletRequest request, String login, Set<String> roles) {
 			super(request);
 			this.login = login;
+			this.roles = roles;
 		}
 
 		@Override
 		public Principal getUserPrincipal() {
-			return () -> login;
+			return new User(login, roles);
 		}
 
 	}
